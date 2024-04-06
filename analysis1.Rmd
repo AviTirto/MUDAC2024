@@ -1,0 +1,57 @@
+---
+title: "Analysis1"
+output: html_document
+date: "2024-04-06"
+---
+
+```{r}
+library(ggplot2)
+library(dplyr)
+```
+
+```{r}
+corn_df = read_csv("crops.csv")
+```
+
+```{r}
+bushels_df = corn_df %>%
+  select("County", "Ag District", "Year", "CORN, GRAIN - PRODUCTION, MEASURED IN BU", "SOYBEANS - PRODUCTION, MEASURED IN BU") %>%
+  rename(total_corn = "CORN, GRAIN - PRODUCTION, MEASURED IN BU", district = "Ag District", total_soybeans = "SOYBEANS - PRODUCTION, MEASURED IN BU")
+```
+
+# Missing County Information
+
+```{r}
+bushels_df %>%
+  group_by(Year) %>%
+  summarize(num_na = sum(is.na(total_corn)), total=n(), prop_missing = num_na/total)
+```
+
+- This may effect the total number of corn/soybean bushels recorded
+- Some counties may be missing. Either it was not recorded or maybe that county did not harvest that type of crop
+
+# Yearly Corn and SoyBean Total Production Trends
+
+```{r}
+state_corn_bushels_df = bushels_df %>%
+  group_by(Year) %>%
+  filter(!is.na(total_corn)) %>%
+  summarize(corn = sum(total_corn))
+
+state_soybeans_bushels_df = bushels_df %>%
+  group_by(Year) %>%
+  filter(!is.na(total_soybeans)) %>%
+  summarize(corn = sum(total_soybeans))
+```
+
+```{r}
+ggplot(state_corn_bushels_df, aes(x = Year, y = corn, color = "Corn")) +
+  geom_line() +
+  geom_point() +
+
+geom_line(data = state_soybeans_bushels_df, aes(x = Year, y = corn, color = "Soybeans")) +
+  geom_point(data = state_soybeans_bushels_df, aes(x = Year, y = corn, color = "Soybeans")) +
+
+labs(x = "Year", y = "Total Production", color = "Crop", title = "Total Corn and Soybean Production Over Time") +
+  scale_color_manual(values = c("Corn" = "blue", "Soybeans" = "red"))
+```
