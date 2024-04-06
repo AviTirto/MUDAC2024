@@ -118,6 +118,22 @@ cor(grain_per_acre_df$corn_per_acre, grain_per_acre_df$soybeans_per_acre)
 
 - They are strongly correlated
 
+# Acre Usage for each type of crop over the years
+```{r}
+ggplot(grain_per_acre_df, aes(x = Year)) +
+  geom_line(aes(y = total_corn_harvested, color = "Corn")) +
+  geom_line(aes(y = total_soybeans_harvested, color = "Soybeans")) +
+  labs(x = "Year", y = "Acres Harvested", color = "Crop", title = "Total Acres Harvested for Corn and Soybeans Over Time") +
+  scale_color_manual(values = c("Corn" = "blue", "Soybeans" = "red"))
+```
 
+```{r}
+grain_per_acre_df = grain_per_acre_df %>%
+  mutate(total_harvested = total_corn_harvested + total_soybeans_harvested)
+
+ggplot(grain_per_acre_df, aes(x = Year)) +
+  geom_line(aes(y = total_harvested)) +
+  labs(x = "Year", y = "Acres Harvested", title = "Total Acres Harvested Over Time")
+```
 
 TODO: Visualizing the changes in Total and Per Acre to better understand that they are strongly correlated.
