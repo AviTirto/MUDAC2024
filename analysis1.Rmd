@@ -55,3 +55,21 @@ geom_line(data = state_soybeans_bushels_df, aes(x = Year, y = corn, color = "Soy
 labs(x = "Year", y = "Total Production", color = "Crop", title = "Total Corn and Soybean Production Over Time") +
   scale_color_manual(values = c("Corn" = "blue", "Soybeans" = "red"))
 ```
+
+Observations:
+- A lot more corn is produced then soybeans
+- Both corn and soybeans seem to be following a simmilar trend(increase and decrease at simmilar times). This suggests that weather and evironmental factors may influence both crops
+
+```{r}
+
+state_corn_bushels_df$type <- "Corn"
+state_soybeans_bushels_df$type <- "Soybeans"
+
+combined_df <- rbind(state_corn_bushels_df, state_soybeans_bushels_df)
+
+ggplot(combined_df, aes(x = type, y = corn, fill = type)) +
+  geom_boxplot() +
+  labs(x = NULL, y = "Total Production in # of Bushels", title = "Corn vs. Soybean Production Distribution") +
+  scale_fill_manual(values = c("Corn" = "blue", "Soybeans" = "red"))
+
+```
