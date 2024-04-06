@@ -16,6 +16,40 @@ library(tidyr)
 ```
 
 ```{r}
-fertilizer_df = read_csv("crops.csv")
+fertilizer_df = read_csv("FertilizerConsumption.csv") %>%
+  rename(urea = "Urea (46-0-0)",
+         potash = "Potash (0-0-60)",
+         monammonium_phosphate = "Monammonium Phosphate (MAP) (11-52-0)",
+         diammonium_phosphate = "Diammonium Phosphate (DAP) (18-46-0)",
+         ammonia = "Ammonia (82-0-0)")
+```
+
+```{r}
+yearly_df = fertilizer_df %>%
+  group_by(Year) %>%
+  summarize(t_urea = sum(urea),
+            t_potash = sum(potash),
+            t_monammonium_phosphate = sum(monammonium_phosphate),
+            t_diammonium_phosphate = sum(diammonium_phosphate),
+            t_ammonia = sum(ammonia))
+```
+
+```{r}
+long_df <- pivot_longer(yearly_df, 
+                        cols = starts_with("t_"), 
+                        names_to = "Fertilizer", 
+                        values_to = "Total_Amount") %>%
+  mutate(Fertilizer = ifelse(Fertilizer == "t_ammonia", "ammonia",
+                      ifelse(Fertilizer == "t_potash", "potash", 
+                      ifelse(Fertilizer == "t_monammonium_phosphate", "monammonium_phosphate",
+                      ifelse(Fertilizer == "t_diammonium_phosphate", "diammonium_phosphate",
+                      ifelse(Fertilizer == "t_urea", "urea", Fertilizer)))))) 
+
+ggplot(data = long_df, aes(x = Year, y = Total_Amount, color = Fertilizer)) +
+  geom_line() +
+  labs(title = "Fertilizer Usage Over Years",
+       x = "Year",
+       y = "tons",
+       color = "Fertilizer Type")
 ```
 
