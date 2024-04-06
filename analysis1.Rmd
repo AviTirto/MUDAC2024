@@ -4,9 +4,15 @@ output: html_document
 date: "2024-04-06"
 ---
 
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
 ```{r}
 library(ggplot2)
 library(dplyr)
+library(readr)
+library(tidyr)
 ```
 
 ```{r}
@@ -33,43 +39,85 @@ bushels_df %>%
 # Yearly Corn and SoyBean Total Production Trends
 
 ```{r}
-state_corn_bushels_df = bushels_df %>%
+state_corn_bushels_df <- bushels_df %>%
   group_by(Year) %>%
   filter(!is.na(total_corn)) %>%
   summarize(corn = sum(total_corn))
 
-state_soybeans_bushels_df = bushels_df %>%
+state_soybeans_bushels_df <- bushels_df %>%
   group_by(Year) %>%
   filter(!is.na(total_soybeans)) %>%
-  summarize(corn = sum(total_soybeans))
+  summarize(soybeans = sum(total_soybeans))
+
+combined_df <- merge(state_corn_bushels_df, state_soybeans_bushels_df, by = "Year", all = TRUE)
+
+combined_df_long <- tidyr::pivot_longer(combined_df, cols = c("corn", "soybeans"), names_to = "Crop", values_to = "Production")
+
+ggplot(combined_df_long, aes(x = Year, y = Production, color = Crop)) +
+  geom_line() +
+  geom_point() +
+  labs(x = "Year", y = "Number of Bushels Produced", title = "Total Bushels of Corn and Soybean Producted Over Time")
 ```
 
 ```{r}
-ggplot(state_corn_bushels_df, aes(x = Year, y = corn, color = "Corn")) +
-  geom_line() +
-  geom_point() +
-
-geom_line(data = state_soybeans_bushels_df, aes(x = Year, y = corn, color = "Soybeans")) +
-  geom_point(data = state_soybeans_bushels_df, aes(x = Year, y = corn, color = "Soybeans")) +
-
-labs(x = "Year", y = "Total Production", color = "Crop", title = "Total Corn and Soybean Production Over Time") +
-  scale_color_manual(values = c("Corn" = "blue", "Soybeans" = "red"))
+cor(state_soybeans_bushels_df$soybeans, state_corn_bushels_df$corn)
 ```
 
 Observations:
-- A lot more corn is produced then soybeans
-- Both corn and soybeans seem to be following a simmilar trend(increase and decrease at simmilar times). This suggests that weather and evironmental factors may influence both crops
+- A lot more corn is produced than soybeans
+- Both corn and soybeans seem to be following a similar trend(increase and decrease at similar times). This suggests that weather and environmental factors may influence both crops.
+- There is a correlation of 83.2% which means that the total production of both is strongly correlated.
+
+# Crop per Acre Analysis
 
 ```{r}
-
-state_corn_bushels_df$type <- "Corn"
-state_soybeans_bushels_df$type <- "Soybeans"
-
-combined_df <- rbind(state_corn_bushels_df, state_soybeans_bushels_df)
-
-ggplot(combined_df, aes(x = type, y = corn, fill = type)) +
-  geom_boxplot() +
-  labs(x = NULL, y = "Total Production in # of Bushels", title = "Corn vs. Soybean Production Distribution") +
-  scale_fill_manual(values = c("Corn" = "blue", "Soybeans" = "red"))
-
+crop_df <- corn_df %>%
+  rename(
+    corn_harvested = "CORN, GRAIN - ACRES HARVESTED",
+    corn_produced = "CORN, GRAIN - PRODUCTION, MEASURED IN BU",
+    corn_grain_per_acre = "CORN, GRAIN - YIELD, MEASURED IN BU / ACRE",
+    soybeans_harvested = "SOYBEANS - ACRES HARVESTED", 
+    soybeans_produced = "SOYBEANS - PRODUCTION, MEASURED IN BU",
+    soybeans_grain_per_acre = "SOYBEANS - YIELD, MEASURED IN BU / ACRE") %>%
+  select(Year, corn_harvested, corn_produced, corn_grain_per_acre, soybeans_harvested, soybeans_produced, soybeans_grain_per_acre) %>%
+  mutate(
+    across(where(is.numeric), ~replace_na(., 0))
+  )
 ```
+
+```{r}
+grain_per_acre_df = crop_df %>%
+  group_by(Year) %>%
+  summarize(
+    total_corn_harvested = sum(corn_harvested),
+    total_corn_produced = sum(corn_produced),
+    total_soybeans_harvested = sum(soybeans_harvested),
+    total_soybeans_produced = sum(soybeans_produced)
+  ) %>%
+  mutate(
+    corn_per_acre = total_corn_produced/total_corn_harvested,
+    soybeans_per_acre = total_soybeans_produced/total_corn_harvested
+  )
+```
+
+```{r}
+ggplot(grain_per_acre_df, aes(x = Year)) +
+  geom_line(aes(y = corn_per_acre, color = "Corn")) +
+  geom_line(aes(y = soybeans_per_acre, color = "Soybeans")) +
+  labs(x = "Year", y = "Bushels per Acre", color = "Crop", title = "Corn and Soybean Bushel Production per Acre Over Years") +
+  scale_color_manual(values = c("Corn" = "blue", "Soybeans" = "red"))
+```
+
+Observation:
+- We can grow more corn per acre than we can grow soybeans per acre
+- The trends of crops per acre seem strongly correlated
+
+```{r}
+cor(grain_per_acre_df$corn_per_acre, grain_per_acre_df$soybeans_per_acre)
+```
+
+- They are strongly correlated
+
+
+
+TODO: Visualizing the changes in Total and Per Acre to better understand that they are strongly correlated.
