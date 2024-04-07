@@ -1,8 +1,12 @@
 ---
-title: "Analysis5"
+title: "analysis6"
 output: html_document
 date: "2024-04-07"
 ---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
 
 ```{r}
 library(ggplot2)
@@ -13,20 +17,32 @@ library(corrplot)
 library(fmsb)
 ```
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-```
-
 ```{r}
-CPI_df = read_csv("CropProductivityIndex.csv") %>%
-  select(County, CPI)
-```
-
-```{r}
-land_df = read_csv("TillableLand.csv") %>%
-  rename(tillable = "Total Class 2a Tillable Acres")
+replace_na_with_mean_or_zero <- function(x) {
+  if (any(!is.na(x))) {
+    x[is.na(x)] <- mean(x, na.rm = TRUE)
+    return(x)
+  } else {
+    x[is.na(x)] <- 0
+    return(x)
+  }
+}
 
 crops_df = read_csv("crops.csv") %>%
+  rename(
+    sugar_harvest = "SUGARBEETS - ACRES HARVESTED",
+    sugar_planted = "SUGARBEETS - ACRES PLANTED",
+    sugar_produced = "SUGARBEETS - PRODUCTION, MEASURED IN TONS",
+    sugar_sucrose = "SUGARBEETS - SUCROSE, MEASURED IN PCT",
+    sugar_per_acre = "SUGARBEETS - YIELD, MEASURED IN TONS / ACRE"
+  ) %>%
+  group_by(County) %>%
+  mutate(sugar_harvest = replace_na_with_mean_or_zero(sugar_harvest),
+         sugar_planted = replace_na_with_mean_or_zero(sugar_planted),
+         sugar_produced = replace_na_with_mean_or_zero(sugar_produced),
+         sugar_sucrose = replace_na_with_mean_or_zero(sugar_sucrose),
+         sugar_per_acre = replace_na_with_mean_or_zero(sugar_per_acre),
+         ) %>%
   rename(
     corn_harvested = "CORN, GRAIN - ACRES HARVESTED",
     corn_produced = "CORN, GRAIN - PRODUCTION, MEASURED IN BU",
@@ -43,6 +59,12 @@ crops_df = read_csv("crops.csv") %>%
     corn_grain_per_acre = corn_grain_per_acre * 30.027682980816
   )
 
+```
+
+```{r}
+land_df = read_csv("TillableLand.csv") %>%
+  rename(tillable = "Total Class 2a Tillable Acres")
+
 fertilizer_df = read_csv("FertilizerConsumption.csv") %>%
   rename(urea = "Urea (46-0-0)",
          potash = "Potash (0-0-60)",
@@ -53,6 +75,7 @@ fertilizer_df = read_csv("FertilizerConsumption.csv") %>%
 ```
 
 ```{r}
+CPI_df = read_csv("CropProductivityIndex.csv")
 fl_df <- inner_join(fertilizer_df, land_df, by = c("County", "Year")) %>%
   select(Year, County, district, urea, potash, monammonium_phosphate, diammonium_phosphate, ammonia, tillable)
 flc_df <- inner_join(fl_df, crops_df, by = c("Year", "County")) %>%
