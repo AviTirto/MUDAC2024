@@ -50,13 +50,13 @@ crops_df = read_csv("crops.csv") %>%
     soybeans_harvested = "SOYBEANS - ACRES HARVESTED", 
     soybeans_produced = "SOYBEANS - PRODUCTION, MEASURED IN BU",
     soybeans_grain_per_acre = "SOYBEANS - YIELD, MEASURED IN BU / ACRE") %>%
-  select(Year, County, corn_harvested, corn_produced, corn_grain_per_acre, soybeans_harvested, soybeans_produced, soybeans_grain_per_acre) %>%
   mutate(
     across(where(is.numeric), ~replace_na(., 0))
   ) %>%
   mutate(
     soybeans_grain_per_acre = soybeans_grain_per_acre * 30.027682980816,
-    corn_grain_per_acre = corn_grain_per_acre * 30.027682980816
+    corn_grain_per_acre = corn_grain_per_acre * 30.027682980816,
+    sugar_per_acre = sugar_per_acre * 30.027682980816
   )
 
 ```
@@ -151,5 +151,14 @@ flc_map_sf <- st_as_sf(flc_map_df)
 ggplot(data = flc_map_sf) +
   geom_sf(aes(fill = corn_grain_per_acre)) +
   scale_fill_continuous(name = "Corn Kilograms Per Acre", low = "lightblue", high = "darkblue") +
+  theme_minimal()
+```
+
+```{r}
+flc_map_sf <- st_as_sf(flc_map_df)
+
+ggplot(data = flc_map_sf) +
+  geom_sf(aes(fill = sugar_per_acre)) +
+  scale_fill_continuous(name = "Sugarbeets Kilograms Per Acre", low = "lightyellow", high = "darkorange") +
   theme_minimal()
 ```
